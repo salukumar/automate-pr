@@ -1,0 +1,43 @@
+name: "Terminal Triggered PR Creator"
+
+on:
+  repository_dispatch:
+    # This must match the 'event_type' you send from your terminal
+    types: [create-my-pr]
+
+jobs:
+  automate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history so branches can be created correctly
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          # Authentication
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Branch Naming (Uses the Ticket Number from your terminal)
+          branch: "auto/${{ github.event.client_payload.ticket }}"
+          delete-branch: true
+          
+          # PR Metadata (Uses the Title and Ticket from your terminal)
+          title: "[${{ github.event.client_payload.ticket }}] ${{ github.event.client_payload.title }}"
+          
+          # PR Description (Formats the Ticket and Description sent from terminal)
+          body: |
+            ## 🎫 Ticket Information
+            **ID:** `${{ github.event.client_payload.ticket }}`
+            
+            ## 📝 Description
+            ${{ github.event.client_payload.description }}
+            
+            ---
+            *Generated automatically via Terminal Trigger by @${{ github.actor }}*
+          
+          # Commit Settings
+          commit-message: "feat: ${{ github.event.client_payload.title }} (${{ github.event.client_payload.ticket }})"
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
